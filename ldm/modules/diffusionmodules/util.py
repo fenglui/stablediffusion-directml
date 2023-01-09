@@ -11,6 +11,7 @@
 import os
 import math
 import torch
+import torch_directml
 import torch.nn as nn
 import numpy as np
 from einops import repeat
@@ -205,7 +206,7 @@ def normalization(channels):
     :param channels: number of input channels.
     :return: an nn.Module for normalization.
     """
-    return GroupNorm32(32, channels)
+    return _GroupNorm(32, channels) # GroupNorm32(32, channels)
 
 
 # PyTorch 1.7 has SiLU, but we support PyTorch 1.5.
@@ -214,9 +215,25 @@ class SiLU(nn.Module):
         return x * torch.sigmoid(x)
 
 
+# NYI
 class GroupNorm32(nn.GroupNorm):
     def forward(self, x):
         return super().forward(x.float()).type(x.dtype)
+
+class GroupNorm(nn.GroupNorm):
+    def forward(self, x):
+        x = x.to("cpu")
+        self.weight = nn.Parameter(self.weight.to("cpu"))
+        self.bias = nn.Parameter(self.bias.to("cpu"))
+        result = super().forward(x).to(dml)
+        self.weight = nn.Parameter(self.weight.to(dml))
+        self.bias = nn.Parameter(self.bias.to(dml))
+        return result
+
+class _GroupNorm(GroupNorm):
+    def forward(self, x):
+        return super().forward(x.float()).type(x.dtype)
+
 
 def conv_nd(dims, *args, **kwargs):
     """
