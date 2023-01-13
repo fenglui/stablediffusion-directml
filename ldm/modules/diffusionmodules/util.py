@@ -224,10 +224,9 @@ class GroupNorm32(nn.GroupNorm):
 
 class GroupNorm(nn.GroupNorm):
     def forward(self, x):
-        x = x.to("cpu")
         self.weight = nn.Parameter(self.weight.to("cpu"))
         self.bias = nn.Parameter(self.bias.to("cpu"))
-        result = super().forward(x).to(dml)
+        result = super().forward(x.to("cpu")).to(dml)
         self.weight = nn.Parameter(self.weight.to(dml))
         self.bias = nn.Parameter(self.bias.to(dml))
         return result
