@@ -11,16 +11,12 @@
 import os
 import math
 import torch
-import torch_directml
 import torch.nn as nn
 import numpy as np
-from joblib import Parallel, delayed
 from einops import repeat
 
 from ldm.util import instantiate_from_config
 
-
-dml = torch_directml.device(torch_directml.default_device())
 
 def make_beta_schedule(schedule, n_timestep, linear_start=1e-4, linear_end=2e-2, cosine_s=8e-3):
     if schedule == "linear":
@@ -280,14 +276,6 @@ class GroupNorm(nn.Module):
         return '{num_groups}, {num_channels}, eps={eps}, ' \
             'affine={affine}'.format(**self.__dict__)
 
-#class GroupNorm(nn.GroupNorm):
-#    def forward(self, x):
-#        self.weight = nn.Parameter(self.weight.to("cpu"))
-#        self.bias = nn.Parameter(self.bias.to("cpu"))
-#        result = super().forward(x.to("cpu")).to(dml)
-#        self.weight = nn.Parameter(self.weight.to(dml))
-#        self.bias = nn.Parameter(self.bias.to(dml))
-#        return result
 
 class _GroupNorm(GroupNorm):
     def forward(self, x):
